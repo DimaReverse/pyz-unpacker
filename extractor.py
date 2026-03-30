@@ -17,7 +17,7 @@ def normalize_toc(toc):
             elif len(entry) == 3:
                 typecode, pos, length = entry
             else:
-                print(f"[!] Entry dict non riconosciuta: {name} -> {entry!r}")
+                print(f"[!] Unrecognized dict entry: {name} -> {entry!r}")
                 continue
             out.append((name, typecode, pos, length))
         return out
@@ -38,27 +38,27 @@ def normalize_toc(toc):
                     elif len(entry) == 3:
                         typecode, pos, length = entry
                     else:
-                        print(f"[!] Entry list non riconosciuta: {item!r}")
+                        print(f"[!] Unrecognized list entry: {item!r}")
                         continue
                     out.append((name, typecode, pos, length))
                     continue
 
-            print(f"[!] Formato TOC sconosciuto, salto: {item!r}")
+            print(f"[!] Unknown TOC format, skipping: {item!r}")
 
         return out
 
-    raise TypeError(f"TOC di tipo inatteso: {type(toc).__name__}")
+    raise TypeError(f"Unexpected TOC type: {type(toc).__name__}")
 
 def build_valid_pyc_from_marshaled_code(marshaled_blob):
     code_obj = marshal.loads(marshaled_blob)
-    # Crea un .pyc timestamp-based valido per la versione Python in uso
+    # Create a valid timestamp-based .pyc for the current Python version.
     return _be._code_to_timestamp_pyc(code_obj, mtime=0, source_size=0)
 
 def extract_pyz_as_valid_pyc(pyz_path, output_dir):
     with open(pyz_path, "rb") as f:
         magic = f.read(4)
         if magic != b"PYZ\x00":
-            raise ValueError(f"Non sembra un PYZ valido: magic={magic!r}")
+            raise ValueError(f"This does not look like a valid PYZ file: magic={magic!r}")
 
         pyc_magic = f.read(4)
         toc_pos = struct.unpack("!i", f.read(4))[0]
@@ -81,7 +81,7 @@ def extract_pyz_as_valid_pyc(pyz_path, output_dir):
                 blob = f.read(length)
                 data = zlib.decompress(blob)
 
-                # Prova a convertire il blob raw in un vero .pyc
+                # Try to convert the raw blob into a real .pyc file.
                 pyc_data = build_valid_pyc_from_marshaled_code(data)
 
                 out_path = os.path.join(output_dir, *name.split(".")) + ".pyc"
@@ -97,12 +97,12 @@ def extract_pyz_as_valid_pyc(pyz_path, output_dir):
                 print(f"[!] FAIL: {name} -> {e}")
 
         print()
-        print(f"[+] Estratti validi: {extracted}")
-        print(f"[+] Falliti:         {failed}")
+        print(f"[+] Successfully extracted: {extracted}")
+        print(f"[+] Failed:                 {failed}")
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("Uso: py extractor_fix.py <PYZ-00.pyz> <output_dir>")
+        print("Usage: py extractor.py <PYZ-00.pyz> <output_dir>")
         sys.exit(1)
 
     extract_pyz_as_valid_pyc(sys.argv[1], sys.argv[2])
